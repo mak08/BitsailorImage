@@ -3,6 +3,6 @@ Description=Bitsailor Router
 After=network.target
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/sbcl --core /usr/local/bitsailor/bitsailor.core
+ExecStart=/usr/local/bin/sbcl --core /usr/local/bitsailor/bitsailor.core --dynamic-space-size 6144 --lose-on-corruption --disable-ldb
 Restart=always
 RestartSec=5
