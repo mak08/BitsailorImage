@@ -1,0 +1,8 @@
+[Unit]
+Description=Bitsailor Router
+After=network.target
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/sbcl --core /usr/local/bitsailor/bitsailor.core
+Restart=always
+RestartSec=5
