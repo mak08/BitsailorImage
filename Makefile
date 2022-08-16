@@ -80,6 +80,11 @@ install:
 	cp bitsailor.service /etc/systemd/system/
 	systemctl daemon-reload
 
+update:
+	cp bitsailor.core /usr/local/bitsailor/
+	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
+	systemctl restart bitsailor
+
 remove:
 	rm -rf /etc/bitsailor
 	rm -rf /srv/bitsailor
