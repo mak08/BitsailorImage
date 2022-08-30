@@ -81,9 +81,11 @@ install:
 	systemctl daemon-reload
 
 update:
+	echo "Copying image..."
 	cp bitsailor.core /usr/local/bitsailor/
-	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
+	echo "Restarting service..."
 	systemctl restart bitsailor
+	echo "Done - please adjust config files manually."
 
 remove:
 	rm -rf /etc/bitsailor
