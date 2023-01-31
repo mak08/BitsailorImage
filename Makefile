@@ -10,12 +10,14 @@ DEPDIR = deps/
 REPOS = makros.git log2.git zlib.git rdparse.git cl-geomath.git cl-map.git cl-weather.git cl-eccodes.git cl-mbedtls.git PolarCL.git cl-rdbms.git bitsailor.git
 QUICKLISP = $(DEPDIR)quicklisp/quicklisp.lisp
 LAND_POLYGONS = land-polygons-split-4326
+COASTLINES = coastlines-split-4326
+
 IMAGE = bitsailor.core
 
 export CL_SOURCE_REGISTRY=$(realpath $(DEPDIR))
 
 
-BUILD: $(LAND_POLYGONS)/land_polygons.qix $(IMAGE)
+BUILD: $(COASTLINES)/lines.qix $(LAND_POLYGONS)/land_polygons.qix $(IMAGE)
 	echo 'done'
 
 $(IMAGE): $(QUICKLISP) $(REPOS) $(IMAGE)
@@ -63,6 +65,15 @@ $(LAND_POLYGONS): $(LAND_POLYGONS).zip
 $(LAND_POLYGONS).zip:
 	wget https://osmdata.openstreetmap.de/download/land-polygons-split-4326.zip
 
+$(COASTLINES)/lines.qix: $(COASTLINES)
+	cd coastlines-split-4326; shptree lines.shp
+
+$(COASTLINES): $(COASTLINES).zip
+	unzip coastlines-split-4326.zip
+
+$(COASTLINES).zip:
+	wget https://osmdata.openstreetmap.de/download/coastlines-split-4326.zip
+
 install:
 	mkdir -p /usr/local/bitsailor
 	mkdir -p /var/log/bitsailor
@@ -71,6 +82,7 @@ install:
 	mkdir -p /srv/bitsailor/weather/current
 	mkdir -p /srv/bitsailor/weather/archive
 	cp -R $(LAND_POLYGONS) /srv/bitsailor/map/
+	cp -R $(COASTLINES) /srv/bitsailor/map/
 	cp bitsailor.core /usr/local/bitsailor/
 	cp bitsailor.conf /etc/bitsailor/bitsailor.conf
 	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
