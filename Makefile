@@ -20,7 +20,7 @@ export CL_SOURCE_REGISTRY=$(realpath $(DEPDIR))
 BUILD: $(COASTLINES)/lines.qix $(LAND_POLYGONS)/land_polygons.qix $(IMAGE)
 	echo 'done'
 
-$(IMAGE): $(QUICKLISP) $(REPOS) $(IMAGE)
+$(IMAGE): $(QUICKLISP) $(REPOS)
 	CL_SOURCE_REGISTRY=$(realpath $(DEPDIR))//; \
 	echo $(CL_SOURCE_REGISTRY); \
 	sbcl --script make-executable.cl
@@ -100,6 +100,10 @@ update:
 	echo "Restarting service..."
 	systemctl restart bitsailor
 	echo "Done - please adjust config files manually."
+
+webfiles:
+	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
+	echo "Done - please adjust config files manually and restart if necessary."
 
 remove:
 	rm -rf /etc/bitsailor
