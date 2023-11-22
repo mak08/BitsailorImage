@@ -97,6 +97,8 @@ update:
 	cp bitsailor.core /usr/local/bitsailor/
 	echo "Copying webpage..."
 	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
+	echo "Copying service definition..."
+	cp bitsailor.service /etc/systemd/system/
 	echo "Restarting service..."
 	systemctl restart bitsailor
 	echo "Done - please adjust config files manually."
