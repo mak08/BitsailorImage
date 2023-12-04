@@ -100,6 +100,7 @@ update:
 	echo "Copying service definition..."
 	cp bitsailor.service /etc/systemd/system/
 	echo "Restarting service..."
+	systemctl daemon-reload
 	systemctl restart bitsailor
 	echo "Done - please adjust config files manually."
 
