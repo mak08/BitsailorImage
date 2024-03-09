@@ -97,6 +97,10 @@ update:
 	cp bitsailor.core /usr/local/bitsailor/
 	echo "Copying webpage..."
 	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
+	echo "Copying polars"
+	cp -R polars /etc/bitsailor/
+	echo "Copying race list"
+	cp -R races /etc/bitsailor/
 	echo "Copying service definition..."
 	cp bitsailor.service /etc/systemd/system/
 	echo "Restarting service..."
