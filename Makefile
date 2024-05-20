@@ -7,7 +7,7 @@
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 DEPDIR = deps/
-REPOS = makros.git log2.git zlib.git rdparse.git cl-geomath.git cl-map.git cl-weather.git cl-eccodes.git cl-mbedtls.git PolarCL.git cl-rdbms.git bitsailor.git
+REPOS = makros.git log2.git zlib.git rdparse.git JSGrib.git cl-geomath.git cl-map.git cl-weather.git cl-eccodes.git cl-mbedtls.git PolarCL.git cl-rdbms.git bitsailor.git
 QUICKLISP = $(DEPDIR)quicklisp/quicklisp.lisp
 LAND_POLYGONS = land-polygons-split-4326
 COASTLINES = coastlines-split-4326
@@ -46,6 +46,16 @@ PolarCL.git:
 		cd $(DEPDIR); git clone https://github.com/mak08/PolarCL.git; \
 	fi; \
 	cd  $(MKDIR)/$(DEPDIR)PolarCL; make;
+
+bitsailor.git:
+	mkdir -p $(DEPDIR); \
+	if [ -d $(DEPDIR)$* ]; then \
+		cd $(DEPDIR)$*; git pull; \
+	else \
+		cd $(DEPDIR); git clone https://github.com/mak08/$@; \
+	fi;
+	cd  $(MKDIR)/$(DEPDIR)bitsailor; ln -s ../JSGrib ./web/js/JSGrib;
+
 
 %.git:
 
