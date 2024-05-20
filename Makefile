@@ -54,10 +54,10 @@ bitsailor.git:
 	else \
 		cd $(DEPDIR); git clone https://github.com/mak08/$@; \
 	fi;
-	if [ -d $(MKDIR)/$(DEPDIR)bitsailor/web/js/JSGrib/ ]; then \
+	if [ -d $(DEPDIR)bitsailor/web/js/JSGrib/ ]; then \
 		echo "JSGrib/ exists" ; \
 	else \
-		cd  $(MKDIR)/$(DEPDIR)bitsailor; ln -s ../JSGrib ./web/js/JSGrib; \
+		cd $(DEPDIR)bitsailor; ln -s ../JSGrib ./web/js/JSGrib; \
 	fi;
 
 %.git:
