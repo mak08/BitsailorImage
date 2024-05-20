@@ -49,12 +49,12 @@ PolarCL.git:
 
 bitsailor.git:
 	mkdir -p $(DEPDIR); \
-	if [ -d $(DEPDIR)$* ]; then \
-		cd $(DEPDIR)$*; git pull; \
+	if [ -d $(DEPDIR)bitsailor ]; then \
+		cd $(DEPDIR)bitsailor; git pull; \
 	else \
-		cd $(DEPDIR); git clone https://github.com/mak08/$@; \
+		cd $(DEPDIR); git clone https://github.com/mak08/bitsailor.git; \
 	fi;
-	if [ -L $(DEPDIR)bitsailor/web/js/JSGrib ]; then \
+	if [ -L	 $(DEPDIR)bitsailor/web/js/JSGrib ]; then \
 		echo "JSGrib/ exists" ; \
 	else \
 		cd $(DEPDIR)bitsailor; ln -s ../JSGrib ./web/js/JSGrib; \
