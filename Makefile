@@ -57,7 +57,7 @@ bitsailor.git:
 	if [ -L	 $(DEPDIR)bitsailor/web/js/JSGrib ]; then \
 		echo "JSGrib/ exists" ; \
 	else \
-		cd $(DEPDIR)bitsailor; ln -s ../JSGrib ./web/js/JSGrib; \
+		cd $(DEPDIR)bitsailor; ln -s ../../../JSGrib ./web/js/JSGrib; \
 	fi;
 
 %.git:
