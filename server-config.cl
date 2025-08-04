@@ -1,20 +1,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Description
 ;;; Author         Michael Kappert 2016
-;;; Last Modified <michael 2022-07-20 22:59:17>
+;;; Last Modified <michael 2025-08-05 00:05:45>
 
-(in-package :router)
+(in-package :bitsailor)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Customize log levels
 
-(setf (log2:log-level "virtualhelm:log-stats") log2:+trace+)
+(setf (log2:log-level "bitsailor") log2:+info+)
 (setf (log2:log-level "cl-weather") log2:+info+)
-(setf (log2:log-level "cl-weather:noaa-file-complete-p") log2:+trace+)
-(setf (log2:log-level "cl-weather:noaa-uris-exist-p") log2:+trace+)
-
+(setf (log2:log-level "cl-map") log2:+info+)
 (setf (log2:log-level "polarcl") log2:+info+)
 (setf (log2:log-level "mbedtls") log2:+info+)
+
+(setf (log2:log-level "mbedtls:refresh-buffer") log2:+warning+)
+(setf (log2:log-level "polarcl:server-loop-ondemand") log2:+trace+)
+(setf (log2:log-level "polarcl:handler-thread") log2:+trace+)
+(setf (log2:log-level "bitsailor:log-stats") log2:+trace+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; -------
@@ -40,7 +43,7 @@
 (user :username "admin" :realm "bitsailor" :password "_admin_01")
 (user :username "admin" :realm "admin" :password "_admin_01")
 (user :username "user01" :realm "bitsailor" :password "_user_01")
-(user :username "guest" :realm "bitsaialor" :password "_guest_01")
+(user :username "guest" :realm "bitsailor" :password "_guest_01")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; -----------
@@ -68,6 +71,10 @@
  :request (:prefix "/function")
  :handler (:query-function t :authentication nil :realm "bitsailor"))
 
+(handle
+ :request (:prefix "/admin")
+ :handler (:query-function t :authentication nil :realm "admin"))
+
 (register-function "router.signUp" :authorizer (constantly t))
 (register-function "router.getSession" :authorizer #'vh-function-authorizer)
 (register-function "router.removeSession" :authorizer #'vh-function-authorizer)
@@ -76,11 +83,11 @@
 (register-function "router.getTWAPath" :authorizer #'vh-function-authorizer)
 (register-function "router.setParameter" :authorizer #'vh-function-authorizer)
 (register-function "router.getRaceList" :authorizer (constantly t))
-(register-function "router.resetNMEAConnection" :authorizer #'vh-function-authorizer)
-(register-function "router.getBoatPosition" :authorizer #'vh-function-authorizer)
+(register-function "router.getPolarsList" :authorizer  #'vh-admin-authorizer)
+(register-function "router.getRaceListAdmin" :authorizer #'vh-admin-authorizer)
 (register-function "router.setRoute" :authorizer #'vh-function-authorizer)
 (register-function "router.getRoute" :authorizer #'vh-function-authorizer)
-(register-function "router.getRouteRS" :authorizer #'vh-function-authorizer)
+(register-function "router.getStatistics" :authorizer (constantly t))
 (register-function "router.checkWindow" :authorizer #'vh-function-authorizer)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -152,12 +159,31 @@
            :prefix "/activate-account")
  :handler (:dynamic 'activate-account
            :authentication nil))
+
 ;;; We can't match root for now, match length priority is not implemented or does not work...
 (handle 
  :request (:prefix "")
  :handler (:static (namestring
                     (merge-pathnames (make-pathname :directory '(:relative "web"))
                                      *source-root*))
+           :authentication nil))
+
+(handle
+ :request (:method :post
+           :path "/checkPaths")
+ :handler (:dynamic 'check-paths
+           :authentication nil))
+
+(handle
+ :request (:method :options
+           :prefix "")
+ :handler (:dynamic 'handle-options
+           :authentication nil))
+
+(handle
+ :request (:method :post
+           :prefix "/executeCommands")
+ :handler (:dynamic 'execute-commands
            :authentication nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -171,8 +197,8 @@
 (handle
  :request (:method :get
            :path "/quit")
- :handler (:dynamic (lambda (server handler request response)
-                       (declare (ignore response))
+ :handler (:dynamic  (lambda (server handler request response)
+                       (declare (ignore server response))
                        (cond
                          ((string= (http-authenticated-user handler request)
                                    "admin")
