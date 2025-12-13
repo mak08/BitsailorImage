@@ -5,7 +5,7 @@
 .PHONY: BUILD INSTALL
 
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-
+SBCL = /opt/sbcl/bin/sbcl
 DEPDIR = deps/
 REPOS = makros.git log2.git zlib.git rdparse.git JSGrib.git cl-geomath.git cl-map.git cl-weather.git cl-eccodes.git cl-mbedtls.git PolarCL.git cl-rdbms.git bitsailor.git
 QUICKLISP = $(DEPDIR)quicklisp/quicklisp.lisp
@@ -23,7 +23,7 @@ BUILD: $(COASTLINES)/lines.qix $(LAND_POLYGONS)/land_polygons.qix $(IMAGE)
 $(IMAGE): $(QUICKLISP) $(REPOS)
 	CL_SOURCE_REGISTRY=$(realpath $(DEPDIR))//; \
 	echo $(CL_SOURCE_REGISTRY); \
-	sbcl --script make-executable.cl
+	$(SBCL) --script make-executable.cl
 
 $(QUICKLISP):
 	mkdir -p $(DEPDIR)quicklisp
@@ -134,3 +134,12 @@ clean:
 	-rm bitsailor.core
 	-rm -rf land-polygons-split-4326
 	-rm land-polygons-split-4326.zip
+
+docker-build-base:
+	docker build --file Dockerfile_base -t bitsailor_base .
+
+docker-build:
+	docker build --no-cache --progress=plain -t bitsailor .
+
+docker-run:
+	docker run -it --entrypoint /bin/bash bitsailor

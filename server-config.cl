@@ -1,12 +1,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Description
 ;;; Author         Michael Kappert 2016
-;;; Last Modified <michael 2025-08-05 00:05:45>
+;;; Last Modified <michael 2025-11-20 21:24:40>
 
 (in-package :bitsailor)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Customize log levels
+
+(setf (log2:log-destination "bitsailor") "/var/log/bitsailor/bitsailor.log")
+(setf (log2:log-destination "router") "/var/log/bitsailor/bitsailor.log")
+(setf (log2:log-destination "cl-weather") "/var/log/bitsailor/weather.log")
+(setf (log2:log-destination "polarcl") "/var/log/bitsailor/polarcl.log")
+(setf (log2:log-destination "mbedtls") "/var/log/bitsailor/mbedtls.log")
 
 (setf (log2:log-level "bitsailor") log2:+info+)
 (setf (log2:log-level "cl-weather") log2:+info+)
@@ -75,20 +81,17 @@
  :request (:prefix "/admin")
  :handler (:query-function t :authentication nil :realm "admin"))
 
-(register-function "router.signUp" :authorizer (constantly t))
-(register-function "router.getSession" :authorizer #'vh-function-authorizer)
-(register-function "router.removeSession" :authorizer #'vh-function-authorizer)
-(register-function "router.getRaceInfo" :authorizer #'vh-function-authorizer)
-(register-function "router.getWind" :authorizer #'vh-function-authorizer)
-(register-function "router.getTWAPath" :authorizer #'vh-function-authorizer)
-(register-function "router.setParameter" :authorizer #'vh-function-authorizer)
+(register-function "router.getRaceInfo" :authorizer (constantly t))
+(register-function "router.getWind" :authorizer (constantly t))
+(register-function "router.setParameter" :authorizer (constantly t))
 (register-function "router.getRaceList" :authorizer (constantly t))
-(register-function "router.getPolarsList" :authorizer  #'vh-admin-authorizer)
-(register-function "router.getRaceListAdmin" :authorizer #'vh-admin-authorizer)
-(register-function "router.setRoute" :authorizer #'vh-function-authorizer)
-(register-function "router.getRoute" :authorizer #'vh-function-authorizer)
+(register-function "router.getPolarsList" :authorizer (constantly t))
+(register-function "router.setRoute" :authorizer (constantly t))
+(register-function "router.getRoute" :authorizer (constantly t))
 (register-function "router.getStatistics" :authorizer (constantly t))
-(register-function "router.checkWindow" :authorizer #'vh-function-authorizer)
+(register-function "router.resetNMEAConnection" :authorizer (constantly t))
+(register-function "router.getBoatPosition" :authorizer (constantly t))
+(register-function "router.checkWindow" :authorizer (constantly t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ----------------
@@ -112,7 +115,7 @@
            :prefix "/weather")
  :handler (:directory "/srv/bitsailor/weather"
            :realm "bitsailor"
-           :authorizer #'vh-authorizer))
+           :authorizer (constantly t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Web page
@@ -153,7 +156,7 @@
            :path "/router")
  :handler (:dynamic 'router
            :realm "bitsailor"
-           :authorizer #'vh-authorizer))
+           :authorizer (constantly t)))
 (handle 
  :request (:method :get
            :prefix "/activate-account")
