@@ -92,8 +92,7 @@ install:
 	mkdir -p /var/log/bitsailor
 	mkdir -p /etc/bitsailor
 	mkdir -p /srv/bitsailor/map
-	mkdir -p /srv/bitsailor/weather/current
-	mkdir -p /srv/bitsailor/weather/archive
+	mkdir -p /srv/bitsailor/weather/noaa
 	cp -R $(LAND_POLYGONS) /srv/bitsailor/map/
 	cp -R $(COASTLINES) /srv/bitsailor/map/
 	cp bitsailor.core /usr/local/bitsailor/
@@ -101,7 +100,6 @@ install:
 	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
 	cp server-config.cl /etc/bitsailor/server-config.cl
 	cp -R polars /etc/bitsailor/
-	cp -R races /etc/bitsailor/
 	cp bitsailor.service /etc/systemd/system/
 	systemctl daemon-reload
 
