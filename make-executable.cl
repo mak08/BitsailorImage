@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Description
 ;;; Author         Michael Kappert 2021
-;;; Last Modified <michael 2023-02-01 00:02:38>
+;;; Last Modified <michael 2026-02-12 20:27:59>
 
 (declaim (optimize (speed 3) (debug 1) (space 1) (safety 1)))
 
@@ -46,14 +46,12 @@
 ;;; CL-WEATHER
 (setf cl-weather:*grib-directory* "/srv/bitsailor/weather/current/")
 (setf cl-weather:*use-range-query* t)
-(setf cl-weather:*noaa-gfs-path* cl-weather::+NCEP-FTPPRD+)
 
 ;;; Router
 (setf router:*api-key* (sb-ext:posix-getenv "BITSAILOR_API_KEY"))
 
 (setf router:*db* "/etc/bitsailor/main.sdb")
 
-(setf router:*races-dir* "/etc/bitsailor/races/")
 (setf router:*polars-dir* "/etc/bitsailor/polars/")
 
 (setf router:*rcfile* "/etc/bitsailor/bitsailor.conf")
