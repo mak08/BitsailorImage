@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Description
 ;;; Author         Michael Kappert 2021
-;;; Last Modified <michael 2026-02-12 20:27:59>
+;;; Last Modified <michael 2026-10-19 23:52:52>
 
 (declaim (optimize (speed 3) (debug 1) (space 1) (safety 1)))
 
@@ -48,7 +48,6 @@
 (setf cl-weather:*use-range-query* t)
 
 ;;; Router
-(setf router:*api-key* (sb-ext:posix-getenv "BITSAILOR_API_KEY"))
 
 (setf router:*db* "/etc/bitsailor/main.sdb")
 
