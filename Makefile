@@ -2,10 +2,11 @@
 ## ALTERNATIVE makefile to Docker build
 
 
-.PHONY: BUILD INSTALL
+.PHONY: BUILD install update webfiles web-assets deploy-web deploy-files remove clean \
+        docker-build-base docker-build docker-run
 
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-SBCL = /opt/sbcl/bin/sbcl
+SBCL = `which sbcl`
 DEPDIR = deps/
 REPOS = makros.git log2.git zlib.git rdparse.git JSGrib.git cl-geomath.git cl-map.git cl-weather.git cl-eccodes.git cl-mbedtls.git PolarCL.git cl-rdbms.git bitsailor.git
 QUICKLISP = $(DEPDIR)quicklisp/quicklisp.lisp
@@ -13,6 +14,18 @@ LAND_POLYGONS = land-polygons-split-4326
 COASTLINES = coastlines-split-4326
 
 IMAGE = bitsailor.core
+
+# The deployment checkout must match the core being installed. Do not pull a
+# newer web checkout implicitly during installation of an already built core.
+BITSAILOR_DIR ?= $(DEPDIR)bitsailor
+DESTDIR ?=
+BINDIR ?= /usr/local/bitsailor
+CONFDIR ?= /etc/bitsailor
+WEBROOT ?= $(CONFDIR)/web
+DATADIR ?= /srv/bitsailor
+LOGDIR ?= /var/log/bitsailor
+SYSTEMD_UNIT_DIR ?= /etc/systemd/system
+SYSTEMCTL ?= systemctl
 
 export CL_SOURCE_REGISTRY=$(realpath $(DEPDIR))
 
@@ -87,41 +100,56 @@ $(COASTLINES): $(COASTLINES).zip
 $(COASTLINES).zip:
 	wget https://osmdata.openstreetmap.de/download/coastlines-split-4326.zip
 
-install:
-	mkdir -p /usr/local/bitsailor
-	mkdir -p /var/log/bitsailor
-	mkdir -p /etc/bitsailor
-	mkdir -p /srv/bitsailor/map
-	mkdir -p /srv/bitsailor/weather/noaa
-	cp -R $(LAND_POLYGONS) /srv/bitsailor/map/
-	cp -R $(COASTLINES) /srv/bitsailor/map/
-	cp bitsailor.core /usr/local/bitsailor/
-	cp bitsailor.conf /etc/bitsailor/bitsailor.conf
-	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
-	cp server-config.cl /etc/bitsailor/server-config.cl
-	cp -R polars /etc/bitsailor/
-	cp bitsailor.service /etc/systemd/system/
-	systemctl daemon-reload
+# The Bitsailor Makefile downloads/caches EMODnet and generates missing or
+# outdated depth tiles. Use its all target so future static datasets join here.
+web-assets:
+	@test -f "$(BITSAILOR_DIR)/Makefile" || { \
+	  echo "Missing $(BITSAILOR_DIR)/Makefile; build with an up-to-date Bitsailor checkout first." >&2; exit 1; }
+	$(MAKE) -C "$(BITSAILOR_DIR)" all
 
-update:
-	echo "Copying image..."
-	cp bitsailor.core /usr/local/bitsailor/
-	echo "Copying webpage..."
-	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
-	echo "Copying polars"
-	cp -R polars /etc/bitsailor/
-	echo "Copying race list"
-	cp -R races /etc/bitsailor/
-	echo "Copying service definition..."
-	cp bitsailor.service /etc/systemd/system/
-	echo "Restarting service..."
-	systemctl daemon-reload
-	systemctl restart bitsailor
-	echo "Done - please adjust config files manually."
+# Copy only web assets, including web/bathymetry, never the checkout's configs
+# or its local source-data cache. Retain files unique to the deployed web tree.
+deploy-web: web-assets
+	mkdir -p "$(DESTDIR)$(WEBROOT)"
+	cp -R "$(BITSAILOR_DIR)/web/." "$(DESTDIR)$(WEBROOT)/"
 
-webfiles:
-	cp -R $(DEPDIR)bitsailor/web /etc/bitsailor/
-	echo "Done - please adjust config files manually and restart if necessary."
+# Seed defaults without replacing files edited in the target installation.
+# GNU cp --update=none skips existing files successfully (unlike none-fail).
+deploy-files: deploy-web
+	mkdir -p "$(DESTDIR)$(BINDIR)" "$(DESTDIR)$(LOGDIR)" \
+	  "$(DESTDIR)$(CONFDIR)/polars" "$(DESTDIR)$(DATADIR)/map" \
+	  "$(DESTDIR)$(DATADIR)/weather/noaa" "$(DESTDIR)$(SYSTEMD_UNIT_DIR)"
+	cp "$(IMAGE)" "$(DESTDIR)$(BINDIR)/bitsailor.core"
+	@for file in bitsailor.conf server-config.cl; do \
+	  target="$(DESTDIR)$(CONFDIR)/$$file"; \
+	  if [ ! -e "$$target" ] && [ ! -L "$$target" ]; then \
+	    cp --update=none "$$file" "$$target" || exit $$?; \
+	  fi; \
+	done
+	@if [ ! -e "$(DESTDIR)$(SYSTEMD_UNIT_DIR)/bitsailor.service" ] \
+	    && [ ! -L "$(DESTDIR)$(SYSTEMD_UNIT_DIR)/bitsailor.service" ]; then \
+	  cp --update=none bitsailor.service "$(DESTDIR)$(SYSTEMD_UNIT_DIR)/bitsailor.service"; \
+	fi
+	cp -R --update=none polars/. "$(DESTDIR)$(CONFDIR)/polars/"
+	@if [ -d races ]; then \
+	  mkdir -p "$(DESTDIR)$(CONFDIR)/races"; \
+	  cp -R --update=none races/. "$(DESTDIR)$(CONFDIR)/races/"; \
+	fi
+
+install: deploy-files
+	cp -R "$(LAND_POLYGONS)" "$(DESTDIR)$(DATADIR)/map/"
+	cp -R "$(COASTLINES)" "$(DESTDIR)$(DATADIR)/map/"
+	@if [ -z "$(DESTDIR)" ]; then "$(SYSTEMCTL)" daemon-reload; fi
+	@echo "Installed. Existing configuration, service definition and custom polars/races were preserved."
+
+update: deploy-files
+	@if [ -z "$(DESTDIR)" ]; then \
+	  "$(SYSTEMCTL)" daemon-reload && "$(SYSTEMCTL)" restart bitsailor; \
+	fi
+	@echo "Updated. Existing configuration, service definition and custom polars/races were preserved."
+
+webfiles: deploy-web
+	@echo "Web assets and static datasets updated; configuration files were left untouched."
 
 remove:
 	rm -rf /etc/bitsailor
