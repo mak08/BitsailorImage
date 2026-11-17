@@ -72,6 +72,8 @@ all:
         (web / 'local-file.txt').write_text('retain this')
         (web / 'router-fw.html').write_text('old webpage')
         (self.source / 'bitsailor.core').write_text('new core')
+        core = self.stage / 'usr/local/bitsailor/bitsailor.core'
+        previous_inode = core.stat().st_ino
         (self.source / 'polars/new-boat.csv').write_text('new default polar')
         # update used to fail on this repository's absent races directory.
         self.make('update')
@@ -80,6 +82,8 @@ all:
         self.assertEqual((web / 'local-file.txt').read_text(), 'retain this')
         self.assertEqual((config / 'polars/new-boat.csv').read_text(), 'new default polar')
         self.assertEqual((self.stage / 'usr/local/bitsailor/bitsailor.core').read_text(), 'new core')
+        self.assertNotEqual(core.stat().st_ino, previous_inode)
+        self.assertEqual(core.stat().st_mode & 0o777, 0o755)
         (self.source / 'races').mkdir()
         (self.source / 'races/course.txt').write_text('default course')
         self.make('install')

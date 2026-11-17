@@ -119,7 +119,10 @@ deploy-files: deploy-web
 	mkdir -p "$(DESTDIR)$(BINDIR)" "$(DESTDIR)$(LOGDIR)" \
 	  "$(DESTDIR)$(CONFDIR)/polars" "$(DESTDIR)$(DATADIR)/map" \
 	  "$(DESTDIR)$(DATADIR)/weather/noaa" "$(DESTDIR)$(SYSTEMD_UNIT_DIR)"
-	cp "$(IMAGE)" "$(DESTDIR)$(BINDIR)/bitsailor.core"
+	@set -e; tmp=$$(mktemp "$(DESTDIR)$(BINDIR)/.bitsailor.core.XXXXXX"); \
+	  trap 'rm -f "$$tmp"' EXIT; \
+	  cp "$(IMAGE)" "$$tmp"; chmod 0755 "$$tmp"; \
+	  mv -f "$$tmp" "$(DESTDIR)$(BINDIR)/bitsailor.core"
 	@for file in bitsailor.conf server-config.cl; do \
 	  target="$(DESTDIR)$(CONFDIR)/$$file"; \
 	  if [ ! -e "$$target" ] && [ ! -L "$$target" ]; then \

@@ -52,6 +52,41 @@ Run `python3 tests/deployment-tests.py` to verify tile preparation/copying,
 configuration preservation and service-control ordering using disposable
 directories and a stub systemctl. The tests never call the host's systemctl.
 
+### Runtime selection and existing services
+
+`make-executable.cl` saves `bitsailor.core` with `:executable t`, embedding the
+matching SBCL runtime. The service must execute this file directly. Loading it
+with a separately installed `sbcl --core` can fail with “core was built for
+runtime ... but this is ...”, even if the two SBCL installations report the
+same version. `SBCL` selects the builder (for example,
+`make BUILD SBCL=/usr/bin/sbcl`); the installed executable carries that runtime.
+Updates copy the executable to a temporary file and rename it into place,
+avoiding in-place writes to a running executable, and set its mode to 0755.
+
+Existing service definitions are preserved during deployment. To migrate one
+that invokes `/usr/local/bin/sbcl --core`, run `sudo systemctl edit bitsailor`
+on the deployment host and add:
+
+```ini
+[Service]
+ExecStart=
+ExecStart=/usr/local/bitsailor/bitsailor.core --dynamic-space-size 6144 --lose-on-corruption --disable-ldb
+```
+
+Keep any additional site-specific runtime options. Then apply the change:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl restart bitsailor
+sudo systemctl status bitsailor
+```
+
+No core rebuild is needed to resolve this mismatch when the deployed file was
+already saved as an executable. Other shared-library or application startup
+errors, if any, are separate from the SBCL runtime identity check.
+Run `python3 tests/runtime-tests.py` to check direct standalone startup with
+the service's runtime options using a disposable minimal SBCL executable.
+
 ### Fedora 42 Workstation setup
 
 $ sudo firewall-cmd --permanent --add-service http 

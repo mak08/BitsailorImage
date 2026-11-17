@@ -61,6 +61,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Create image
 
+;; Embed the matching runtime; launch this file directly, not with another
+;; installation's sbcl --core. Leave runtime options configurable by systemd.
 (sb-ext:save-lisp-and-die "bitsailor.core" :toplevel #'router:start-router :executable t) 
 
 (sb-ext:quit)
