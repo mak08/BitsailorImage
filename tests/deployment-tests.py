@@ -86,7 +86,7 @@ all:
         self.assertEqual(core.stat().st_mode & 0o777, 0o755)
         (self.source / 'races').mkdir()
         (self.source / 'races/course.txt').write_text('default course')
-        self.make('install')
+        self.make('install', 'REINSTALL=1')
         (config / 'races/course.txt').write_text('custom course')
         self.make('update')
         self.assertEqual((config / 'races/course.txt').read_text(), 'custom course')
@@ -118,7 +118,7 @@ all:
         (config / 'bitsailor.conf').symlink_to('operator.conf')
         (config / 'operator.conf').write_text('operator settings')
         (config / 'server-config.cl').symlink_to('not-yet-mounted.cl')
-        self.make('install')
+        self.make('install', 'REINSTALL=1')
         self.assertTrue((config / 'bitsailor.conf').is_symlink())
         self.assertEqual((config / 'operator.conf').read_text(), 'operator settings')
         self.assertTrue((config / 'server-config.cl').is_symlink())
@@ -130,6 +130,39 @@ all:
         result = self.make('webfiles', f'BITSAILOR_DIR={old}', success=False)
         self.assertIn('up-to-date Bitsailor checkout', result.stderr)
         self.assertFalse(self.stage.exists())
+
+    def test_repeated_install_refuses_before_any_changes(self):
+        self.make('install')
+        config = self.stage / 'etc/bitsailor/bitsailor.conf'
+        config.write_text('operator configuration')
+        before = {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                  for path in self.stage.rglob('*') if path.is_file()}
+        builds = (self.checkout / 'builds.log').read_text()
+        # A changed core/web checkout must not be deployed, even with -j4.
+        (self.source / 'bitsailor.core').write_text('new core')
+        (self.checkout / 'web/router-fw.html').write_text('newer webpage')
+        result = self.make('install', success=False)
+        self.assertIn('make update', result.stderr)
+        self.assertIn('REINSTALL=1', result.stderr)
+        self.assertEqual(builds, (self.checkout / 'builds.log').read_text())
+        self.assertEqual(before, {path: (path.read_bytes(), path.stat().st_mtime_ns)
+                                  for path in self.stage.rglob('*') if path.is_file()})
+        self.make('install', 'REINSTALL=1')
+        self.assertEqual(config.read_text(), 'operator configuration')
+        self.assertEqual((self.stage / 'usr/local/bitsailor/bitsailor.core').read_text(), 'new core')
+
+    def test_install_detects_each_existing_marker_including_dangling_symlink(self):
+        for relative in ('etc/bitsailor/bitsailor.conf', 'etc/bitsailor/server-config.cl',
+                         'usr/local/bitsailor/bitsailor.core', 'etc/systemd/system/bitsailor.service'):
+            with self.subTest(marker=relative):
+                marker = self.stage / relative
+                marker.parent.mkdir(parents=True, exist_ok=True)
+                marker.symlink_to('not-mounted-yet')
+                result = self.make('install', success=False)
+                self.assertIn(str(marker), result.stderr)
+                self.assertTrue(marker.is_symlink())
+                self.assertFalse((self.checkout / 'builds.log').exists())
+                marker.unlink()
 
     def test_live_update_control_flow_uses_only_stub_systemctl(self):
         self.make('install')

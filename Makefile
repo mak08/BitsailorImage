@@ -26,6 +26,8 @@ DATADIR ?= /srv/bitsailor
 LOGDIR ?= /var/log/bitsailor
 SYSTEMD_UNIT_DIR ?= /etc/systemd/system
 SYSTEMCTL ?= systemctl
+# An existing installation requires an explicit reinstall; defaults remain protected.
+REINSTALL ?= 0
 
 export CL_SOURCE_REGISTRY=$(realpath $(DEPDIR))
 
@@ -139,7 +141,22 @@ deploy-files: deploy-web
 	  cp -R --update=none races/. "$(DESTDIR)$(CONFDIR)/races/"; \
 	fi
 
-install: deploy-files
+install:
+	@if [ "$(REINSTALL)" != 1 ]; then \
+	  for target in "$(DESTDIR)$(CONFDIR)/bitsailor.conf" \
+	      "$(DESTDIR)$(CONFDIR)/server-config.cl" \
+	      "$(DESTDIR)$(BINDIR)/bitsailor.core" \
+	      "$(DESTDIR)$(SYSTEMD_UNIT_DIR)/bitsailor.service"; do \
+	    if [ -e "$$target" ] || [ -L "$$target" ]; then \
+	      echo "Existing installation detected at $$target; nothing was changed." >&2; \
+	      echo "Use make update, or make install REINSTALL=1 to reinstall while preserving configuration." >&2; \
+	      exit 1; \
+	    fi; \
+	  done; \
+	fi
+# Run deployment only after the check, including under make -j. Keep the explicit
+# Makefile path so staging via make -f from another working directory also works.
+	$(MAKE) -f "$(MKDIR)Makefile" deploy-files
 	cp -R "$(LAND_POLYGONS)" "$(DESTDIR)$(DATADIR)/map/"
 	cp -R "$(COASTLINES)" "$(DESTDIR)$(DATADIR)/map/"
 	@if [ -z "$(DESTDIR)" ]; then "$(SYSTEMCTL)" daemon-reload; fi

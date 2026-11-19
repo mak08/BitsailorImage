@@ -30,6 +30,11 @@ On install and update, existing `bitsailor.conf`, `server-config.cl`, and the
 systemd `bitsailor.service` are **never overwritten**. Defaults are copied only
 when absent, including polars and optional race files. New web assets and the
 core replace their deployed versions; destination-only web files remain.
+`make install` refuses an existing installation before preparing datasets or
+copying files. Use `make update` for upgrades. For a deliberate reinstall, use
+`make install REINSTALL=1`; this also preserves existing configuration, service
+definitions, polars and races. The check includes dangling configuration symlinks
+and applies to custom deployment paths and `DESTDIR` staging too.
 Review new configuration defaults manually when upgrading, especially HTTP
 endpoint registrations in `server-config.cl`. Install reloads systemd; update
 reloads systemd and restarts Bitsailor after successful copying. `webfiles`
